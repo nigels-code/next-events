@@ -1,16 +1,38 @@
 import { useRouter } from 'next/router';
-import { Fragment } from 'react';
-import { getFilteredEvents } from '../../dummy-data';
+import { Fragment, useEffect, useState } from 'react';
+import useSWR from 'swr';
+import axios from 'axios';
 import EventList from '../../components/events/events-list';
 import ResultsTitle from '../../components/events/results-title';
 import Button from '../../components/ui/button';
 import ErrorAlert from '../../components/ui/error-alert';
 
-function FilteredEventsPage() {
+function FilteredEventsPage(props) {
+	const [loadedEvents, setLoadedEvents] = useState();
 	const router = useRouter();
 	const filterData = router.query.slug;
 
-	if (!filterData) {
+	const fetcher = (url) => axios.get(url).then((res) => res.data);
+
+	const { data, error } = useSWR(
+		'https://nextevents-4cfe2-default-rtdb.europe-west1.firebasedatabase.app/events.json',
+		fetcher
+	);
+
+	useEffect(() => {
+		if (data) {
+			const events = [];
+			for (const key in data) {
+				events.push({
+					id: key,
+					...data[key]
+				});
+			}
+			setLoadedEvents(events);
+		}
+	}, [data]);
+
+	if (!loadedEvents) {
 		return <p className='center'>Loading...</p>;
 	}
 
@@ -20,14 +42,16 @@ function FilteredEventsPage() {
 	if (
 		isNaN(filterYear) ||
 		isNaN(filterMonth) ||
+		filterYear > 2030 ||
 		filterYear < 2021 ||
 		filterMonth < 1 ||
-		filterMonth > 12
+		filterMonth > 12 ||
+		error
 	) {
 		return (
 			<Fragment>
 				<ErrorAlert>
-					<p>Invalid filter, please reselect your values</p>
+					<p>Invalid Filter - Try Again</p>
 				</ErrorAlert>
 				<div className='center'>
 					<Button link='/events'>Show All Events</Button>
@@ -36,16 +60,19 @@ function FilteredEventsPage() {
 		);
 	}
 
-	const filteredEvents = getFilteredEvents({
-		year: filterYear,
-		month: filterMonth
+	const filteredEvents = loadedEvents.filter((event) => {
+		const eventDate = new Date(event.date);
+		return (
+			eventDate.getFullYear() === filterYear &&
+			eventDate.getMonth() === filterMonth - 1
+		);
 	});
 
-	if (!filteredEvents || filteredEvents.length == 0) {
+	if (!filteredEvents || filteredEvents.length === 0) {
 		return (
 			<Fragment>
 				<ErrorAlert>
-					<p>No events found :(</p>
+					<p>No events found for the chosen filter!</p>
 				</ErrorAlert>
 				<div className='center'>
 					<Button link='/events'>Show All Events</Button>
