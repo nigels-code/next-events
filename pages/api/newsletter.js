@@ -1,4 +1,6 @@
-function handler(req, res) {
+import { connectDB, insertDocument } from '../../helpers/db-util';
+
+async function handler(req, res) {
 	if (req.method === 'POST') {
 		const userEmail = req.body.email;
 
@@ -6,8 +8,26 @@ function handler(req, res) {
 			res.status(422).json({ message: 'Invalid email address' });
 			return;
 		}
-		console.log(userEmail);
-		res.status(201).json({ message: 'Signed up!', email: userEmail });
+
+		let client;
+
+		try {
+			client = await connectDB();
+		} catch {
+			res.status(500).json({ message: 'Connecting to the DB failed' });
+			return;
+		}
+
+		try {
+			await insertDocument(client, 'newsletter', { email: userEmail });
+		} catch {
+			res.status(500).json({ message: 'Inserting data failed' });
+			return;
+		} finally {
+			client.close();
+		}
+
+		res.status(201).json({ message: 'Signed up!' });
 	}
 }
 

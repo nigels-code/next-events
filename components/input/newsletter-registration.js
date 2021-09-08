@@ -8,6 +8,8 @@ function NewsletterRegistration() {
 
 		const enteredEmail = emailInputRef.current.value;
 
+		// console.log(JSON.stringify({ email: enteredEmail }));
+
 		fetch('/api/newsletter', {
 			method: 'POST',
 			body: JSON.stringify({ email: enteredEmail }),
