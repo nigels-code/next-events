@@ -22,4 +22,4 @@ yarn dev
 This runs the application in development mode.  
 Open [http://localhost:3000](http://localhost:3000) to view it in a browser.
 
-Database functions won't work in development mode because the mongodb username and password are stored as environment variables and are not under source control.
+Database functions won't work in development mode because the MongoDB username and password are stored as environment variables and are not under source control.
